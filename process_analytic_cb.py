@@ -1,4 +1,3 @@
-import matplotlib.pyplot as plt
 from datetime import datetime
 import pandas as pd
 import requests
@@ -75,11 +74,10 @@ if __name__ == '__main__':
     cb = CampeonatoBrasileiro()
     df = cb.run(df)
     
-    dataset = df[['temporada', 'rodada']].drop_duplicates()
     df_ultima_rodada = df[df['rodada'] == df['ultima_rodada']]
 
     # Primeira Validação
-    df_check = dataset[['temporada', 'rodada']].drop_duplicates().groupby('temporada', as_index=False)['rodada'].count()
+    df_check = df[['temporada', 'rodada']].drop_duplicates().groupby('temporada', as_index=False)['rodada'].count()
 
     anos_completos = pd.DataFrame({'temporada': range(2003, datetime.now().year+1)})
 
@@ -87,7 +85,7 @@ if __name__ == '__main__':
     df_check['rodada'].fillna(0, inplace=True)
 
     # Segunda validação
-    df_check_02 = dataset[['temporada', 'time']].drop_duplicates().groupby('temporada', as_index=False)['time'].count()
+    df_check_02 = df[['temporada', 'time']].drop_duplicates().groupby('temporada', as_index=False)['time'].count()
 
     # Times
     times = df_ultima_rodada.time.drop_duplicates().sort_values().to_list()
