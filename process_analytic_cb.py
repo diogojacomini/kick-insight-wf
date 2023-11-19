@@ -1,7 +1,7 @@
 from datetime import datetime
 import pandas as pd
 import requests
-
+import os
 
 class CampeonatoBrasileiro():
 
@@ -68,8 +68,18 @@ class CampeonatoBrasileiro():
 
 
 if __name__ == '__main__':
+
+    # Input
     response = requests.get('https://fnt-campeonato-bra.azurewebsites.net/api/getwf?code=Cw5nnWHZlyyzpHzgIUiX48NiEX3z-rpr0tJpSAxXYDokAzFu4welWQ==')
     df = pd.DataFrame(response.json())
+
+    # output
+    directory_path = '/dbfs/FileStore/tables/analytics/cb'
+
+    # Verificar se o diretório existe
+    if not dbutils.fs.ls(directory_path):
+        %fs mkdirs $directory_path
+        print(f'Diretório {directory_path} criado com sucesso.')
 
     cb = CampeonatoBrasileiro()
     df = cb.run(df)
@@ -97,13 +107,13 @@ if __name__ == '__main__':
     df_grouped = df_ultima_rodada[df_ultima_rodada['temporada'] != 2023].groupby(['time', 'temporada']).agg({'pontos': 'sum'}).reset_index()
 
     # load
-    df.to_csv('/dbfs/FileStore/tables/analytics/cb/tb_sys_campeonato_completo.csv', index=False)
-    df_ultima_rodada.to_csv('/dbfs/FileStore/tables/analytics/cb/tb_sys_ultima_rodada.csv', index=False)
+    df.to_csv(os.path.join(directory_path, 'tb_sys_campeonato_completo.csv'), index=False)
+    df_ultima_rodada.to_csv(os.path.join(directory_path, 'tb_sys_ultima_rodada.csv'), index=False)
 
-    df_check.to_csv('/dbfs/FileStore/tables/analytics/cb/tb_sys_validacao_rodada.csv', index=False)
-    df_check_02.to_csv('/dbfs/FileStore/tables/analytics/cb/tb_sys_validacao_time.csv', index=False)
+    df_check.to_csv(os.path.join(directory_path, 'tb_sys_validacao_rodada.csv'), index=False)
+    df_check_02.to_csv(os.path.join(directory_path, 'tb_sys_validacao_time.csv'), index=False)
 
-    counts.to_csv('/dbfs/FileStore/tables/analytics/cb/tb_sys_counts.csv', index=False)
-    estatisticas_campeoes.to_csv('/dbfs/FileStore/tables/analytics/cb/tb_sys_estatisticas_campeoes.csv', index=True)
+    counts.to_csv(os.path.join(directory_path, 'tb_sys_counts.csv'), index=False)
+    estatisticas_campeoes.to_csv(os.path.join(directory_path, 'tb_sys_estatisticas_campeoes.csv'), index=True)
 
-    df_grouped.to_csv('/dbfs/FileStore/tables/analytics/cb/tb_sys_grouped.csv', index=False)
+    df_grouped.to_csv(os.path.join(directory_path, 'tb_sys_grouped.csv'), index=False)
