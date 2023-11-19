@@ -78,7 +78,7 @@ if __name__ == '__main__':
 
     # Verificar se o diretório existe
     if not dbutils.fs.ls(directory_path):
-        %fs mkdirs $directory_path
+        dbutils.fs.mkdirs(directory_path)
         print(f'Diretório {directory_path} criado com sucesso.')
 
     cb = CampeonatoBrasileiro()
