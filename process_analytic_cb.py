@@ -87,18 +87,23 @@ if __name__ == '__main__':
     # Segunda validação
     df_check_02 = df[['temporada', 'time']].drop_duplicates().groupby('temporada', as_index=False)['time'].count()
 
-    # Times
-    times = df_ultima_rodada.time.drop_duplicates().sort_values().to_list()
-
     # Counts dos times
     counts = df_ultima_rodada['time'].value_counts().sort_values(ascending=True).to_frame().reset_index().rename(columns={'count':'qtd'}).copy()
 
     # Estatísticas dos campeões por temporada
     estatisticas_campeoes = df_ultima_rodada.query('campeao == 1').groupby('temporada').agg({'pontos': ['max'], 'gols': 'sum'})
 
-    # Extraindo os valores para o gráfico
-    temporadas = estatisticas_campeoes.index
-    pontos_maximos = estatisticas_campeoes[('pontos', 'max')]
-    gols_totais = estatisticas_campeoes[('gols', 'sum')]
+    # Dados agrupados
+    df_grouped = df_ultima_rodada[df_ultima_rodada['temporada'] != 2023].groupby(['time', 'temporada']).agg({'pontos': 'sum'}).reset_index()
 
-    # Salve
+    # load
+    df.to_csv('/dbfs/FileStore/tables/analytics/cb/tb_sys_campeonato_completo.csv', index=False)
+    df_ultima_rodada.to_csv('/dbfs/FileStore/tables/analytics/cb/tb_sys_ultima_rodada.csv', index=False)
+
+    df_check.to_csv('/dbfs/FileStore/tables/analytics/cb/tb_sys_validacao_rodada.csv', index=False)
+    df_check_02.to_csv('/dbfs/FileStore/tables/analytics/cb/tb_sys_validacao_time.csv', index=False)
+
+    counts.to_csv('/dbfs/FileStore/tables/analytics/cb/tb_sys_counts.csv', index=False)
+    estatisticas_campeoes.to_csv('/dbfs/FileStore/tables/analytics/cb/tb_sys_estatisticas_campeoes.csv', index=True)
+
+    df_grouped.to_csv('/dbfs/FileStore/tables/analytics/cb/tb_sys_grouped.csv', index=False)
