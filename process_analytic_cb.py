@@ -74,10 +74,12 @@ if __name__ == '__main__':
     df = pd.DataFrame(response.json())
 
     # output
-    directory_path = '/dbfs/FileStore/tables/analytics/cb'
+    directory_path = 'dbfs:/FileStore/tables/analytics/cb'
 
     # Verificar se o diretório existe
-    if not dbutils.fs.ls(directory_path):
+    try:
+        dbutils.fs.ls(directory_path)
+    except Exception:
         dbutils.fs.mkdirs(directory_path)
         print(f'Diretório {directory_path} criado com sucesso.')
 
