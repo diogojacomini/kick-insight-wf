@@ -4,7 +4,7 @@ import subprocess
 requirements_path = "/FileStore/tables/insight-wf/requirements.txt"
 
 # Comando para instalar as dependências usando pip
-pip_install_command = f"pip install -r {requirements_path}"
+pip_install_command = f"pip install -r {requirements_path} -y"
 
 # Executar o comando usando subprocess
 subprocess.run(pip_install_command, shell=True)
