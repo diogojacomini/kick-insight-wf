@@ -1,10 +1,13 @@
-from shared.variables import CONNECTION_STRING
+from conf.variables import CONNECTION_STRING, get_vars
 from shared.camp_bra import CampeonatoBrasileiro
 from azure.storage.blob import BlobServiceClient, BlobClient, ContainerClient
 import logging
 import json
 from pandas import read_csv
 import io
+import pickle
+import os 
+import tempfile
 
 class AzureStore():
 
@@ -20,6 +23,13 @@ class AzureStore():
 
     def get_file(self, container_name, filename):
         return self.client.get_blob_client(container=container_name, blob=filename)
+    
+    def list_files(self, container_name, layer):
+        container_client = self.get_container(container_name)
+        list_dict_files = list(container_client.list_blobs(name_starts_with=f'{layer}'))
+        lista_de_nomes = [d.get('name') for d in list_dict_files]
+        
+        return list(map(lambda nome_arquivo: self.read_lake(container_name, nome_arquivo), lista_de_nomes))
 
     def upload_lake(self, data, filename, container_name, overwrite=True):
         """
@@ -86,4 +96,63 @@ class AzureStore():
 
         except Exception as error_read_lake:
             logging.error('read_lake: error_read_lake: {0}'.format(str(error_read_lake)))
+            return None
+        
+
+    def save_model(self, model, filename, container_name, overwrite=True):
+        """
+        Salva um modelo no Azure Blob Storage.
+
+        Args:
+            model: O modelo a ser salvo.
+            filename (str): O nome do arquivo no qual o modelo será salvo no Blob Storage.
+            container_name (str): O nome do contêiner no Azure Blob Storage.
+            overwrite (bool, optional): Se True, o arquivo será substituído se já existir no Blob Storage. Padrão é True.
+        """
+        logging.info(f"save_model: Saving {filename} to container {container_name}, overwrite={overwrite}")
+        blob_client = self.get_container(container_name).get_blob_client(filename)
+        
+        # Use pickle to serialize and save the model
+        with open('model.pkl', 'wb') as model_file:
+            pickle.dump(model, model_file)
+
+        with open('model.pkl', 'rb') as model_file:
+            blob_client.upload_blob(model_file.read(), overwrite=overwrite)
+
+        logging.info("save_model: Save successful")
+
+    def load_model(self, filename, container_name):
+        """
+        Carrega um modelo do Azure Blob Storage.
+
+        Args:
+            filename (str): O nome do arquivo contendo o modelo no Blob Storage.
+            container_name (str): O nome do contêiner no Azure Blob Storage.
+
+        Returns:
+            object: O modelo carregado.
+        """
+        logging.info(f"load_model: Loading {filename} from container {container_name}")
+        blob_client = self.get_file(container_name, filename)
+
+        try:
+            # Create a temporary directory to store the loaded model
+            temp_dir = tempfile.mkdtemp()
+            temp_file_path = os.path.join(temp_dir, 'model_loaded.pkl')
+
+            model_content = blob_client.download_blob().readall()
+            with open(temp_file_path, 'wb') as model_file:
+                model_file.write(model_content)
+
+            with open(temp_file_path, 'rb') as model_file:
+                loaded_model = pickle.load(model_file)
+
+            logging.info("load_model: Load successful")
+
+            # Clean up the temporary directory
+            os.rmdir(temp_dir)
+
+            return loaded_model
+        except Exception as error_load_model:
+            logging.error(f'load_model: {str(error_load_model)}')
             return None
